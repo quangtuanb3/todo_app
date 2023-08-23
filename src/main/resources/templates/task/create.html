@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{layout.html::header}">
+  <meta charset="UTF-8">
+  <title>Create Task</title>
+</head>
+<body>
+<h1 th:text="${task.id!=null ? 'Edit task': 'Create task'}">Create task</h1>
+<div class="toast-body d-none" id="message_toastr" th:text="${message}"></div>
+<div style="width: 50%;margin:auto">
+    <form th:object="${task}" th:action="${task.id != null ? '/tasks/edit/' + task.id : '/tasks/create'}" method="post">
+    <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" class="form-control" id="title" name="title" th:field="*{title}" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" th:field="*{description}" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="start" class="form-label">Start</label>
+            <input type="time" class="form-control" id="start" name="start" th:field="*{start}">
+        </div>
+        <div class="mb-3">
+            <label for="end" class="form-label">End</label>
+            <input type="time" class="form-control" id="end" name="end" th:field="*{end}">
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-control" id="status" th:field="*{status}">
+                <option th:each="task : ${taskStatuses}" th:value="${task}" th:text="${task}"></option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="type" class="form-label">Type</label>
+            <select class="form-control" id="type" name="type" th:field="*{type}">
+                <option th:each="type : ${taskTypes}" th:value="${type}" th:text="${type}"></option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" th:text="${task.id!=null ? 'Save': 'Create'}">Create</button>
+        <a class="btn btn-secondary" href="/tasks">Back</a>
+    </form>
+</div>
+
+<th:block th:insert="~{layout.html::myScript}"></th:block>
+</body>
+</html>
