@@ -5,6 +5,7 @@
     <title></title>
 </head>
 <body>
+<div class="toast-body d-none" id="message_toastr" th:text="${message}"></div>
 <div class="d-flex">
     <!-- Sidebar -->
     <nav id="sidebar" class="bg-light" style="height: 100vh;width: 20%">
@@ -15,10 +16,10 @@
                     <a href="#">Home</a>
                 </li>
                 <li>
-                    <a href="#">Create Non Daily task</a>
+                    <a data-bs-toggle="modal" data-bs-target="#staticBackdrop">Create Non Daily task</a>
                 </li>
                 <li>
-                    <a th:href="@{/tasks/daily}">Edit Daily task</a>
+                    <a th:href="@{/tasks}">Edit Daily task</a>
                 </li>
 
             </ul>
@@ -27,12 +28,13 @@
 
     <!-- Page Content -->
     <div id="content" class="p-4" style="width: 90%">
-        <div class="d-flex " style="justify-content: space-around" >
+        <div class="d-flex " style="justify-content: space-around">
             <h3>Daily task</h3>
             <div class="col-3"></div>
             <div>
                 <img th:src="@{/images/avatar.png}" style="width: 55px;height: 55px;border-radius: 50%" alt="avatar">
-               <span style="padding-left: 20px"><i class="fa fa-bell" style="font-size: 20px;color: cornflowerblue"></i></span>
+                <span style="padding-left: 20px"><i class="fa fa-bell"
+                                                    style="font-size: 20px;color: cornflowerblue"></i></span>
             </div>
         </div>
 
@@ -42,7 +44,6 @@
                 <tr>
                     <th>No.</th>
                     <th>Title</th>
-                    <th>Description</th>
                     <th>Start</th>
                     <th>End</th>
                     <th>Type</th>
@@ -53,14 +54,14 @@
                 </thead>
                 <tbody>
                 <tr th:each="task, iter : ${tasks}" th:object="${task}">
-                    <td th:text="${task.id}"></td>
-                    <td th:text="${task.title}"></td>
-                    <td th:text="${task.description}"></td>
+                    <td th:text="${iter.index + 1}"></td>
+                    <td th:text="${task.title}" th:title="${task.description}" class="task-title"></td>
                     <td th:text="${task.start}"></td>
                     <td th:text="${task.end}"></td>
                     <td th:text="${task.type}"></td>
                     <td>
-                        <select class="form-control" id="status" th:field="*{status}">
+                        <select class="form-control" id="status" th:field="*{status}"
+                                th:onchange="'updateTaskStatus(' + ${task.id} + ')'">
                             <option th:each="task : ${taskStatuses}" th:value="${task}" th:text="${task}"></option>
                         </select>
                     </td>
@@ -76,11 +77,89 @@
             </table>
         </div>
     </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+         aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel"
+                        th:text="${task.id!=null ? 'Edit task': 'Create task'}">Create task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form th:object="${task}" th:action="${task.id != null ? '/edit/' + task.id : '/create'}"
+                          method="post">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" th:field="*{title}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" th:field="*{description}"
+                                      rows="3"></textarea>
+                        </div>
+                        <div class="d-flex" style="justify-content: space-between">
+                            <div class="mb-3 col-5">
+                                <label for="start" class="form-label">Start</label>
+                                <input type="time" class="form-control" id="start" name="start" th:field="*{start}">
+                            </div>
+                            <div class="mb-3 col-5">
+                                <label for="end" class="form-label">End</label>
+                                <input type="time" class="form-control" id="end" name="end" th:field="*{end}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="status-create" class="form-label">Status</label>
+                            <select class="form-control" id="status-create" th:field="*{status}">
+                                <option th:each="task : ${taskStatuses}" th:value="${task}" th:text="${task}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <input type="text" class="form-control" id="type" name="type" value="NON_DAILY" required
+                                   disabled>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" th:text="${task.id!=null ? 'Save': 'Create'}">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 <!--<h1 class="m-4"></h1>-->
 
 
 <th:block th:insert="~{layout.html::myScript}"></th:block>
+<script th:inline="javascript">
+    /* Thymeleaf inline JavaScript */
+    function updateTaskStatus(taskId) {
+        var selectedStatus = document.getElementById("status").value;
+
+
+        $.ajax({
+            type: 'GET',
+            url: '/api/edit/' + taskId + '/' + selectedStatus,
+            success: function (response) {
+                console.log('Task status updated successfully');
+            },
+            error: function () {
+                console.error('Error updating task status');
+            }
+        });
+    }
+</script>
 </body>
 </html>
 
