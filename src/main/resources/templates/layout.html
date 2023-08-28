@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css"
           integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g=="
           crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <link rel="stylesheet" href="/js/style.css">
 <!--    <style>-->
 <!--        .task-title:hover::before {-->
 <!--            content: attr(title); /* Use the 'data-title' attribute value */-->
@@ -36,9 +37,25 @@
 <!--    </style>-->
 </head>
 <body>
+<div id="sidebar" style="height: 100vh;width: 20%" th:fragment="mySidebar">
+    <div class="">
+        <h2 style="color: white" class="p-4">Task Menu</h2>
+        <ul class="list-unstyled components">
+            <li class="navbar-tab" id="homePage">
+                <a href="/" class="nav-bar-link" >Home</a>
+            </li>
+            <li class="navbar-tab" id="taskPage">
+                <a href="/tasks" class="nav-bar-link" >Edit Daily task</a>
+            </li>
 
+        </ul>
+    </div>
+</div>
 
 <div th:fragment="myScript">
+    <script src="/js/base.js"></script>
+    <div class="toast-body d-none" id="message_toastr" th:text="${message}"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
             integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
             crossorigin="anonymous"></script>

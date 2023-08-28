@@ -5,38 +5,27 @@
     <title></title>
 </head>
 <body>
-<div class="toast-body d-none" id="message_toastr" th:text="${message}"></div>
 <div class="d-flex">
     <!-- Sidebar -->
-    <nav id="sidebar" class="bg-light" style="height: 100vh;width: 20%">
-        <div class="p-4">
-            <h2>Task Menu</h2>
-            <ul class="list-unstyled components">
-                <li class="active">
-                    <a href="#">Home</a>
-                </li>
-                <li>
-                    <a data-bs-toggle="modal" data-bs-target="#staticBackdrop">Create Non Daily task</a>
-                </li>
-                <li>
-                    <a th:href="@{/tasks}">Edit Daily task</a>
-                </li>
-
-            </ul>
-        </div>
-    </nav>
-
+    <th:block th:insert="~{layout.html::mySidebar}"></th:block>
     <!-- Page Content -->
-    <div id="content" class="p-4" style="width: 90%">
-        <div class="d-flex " style="justify-content: space-around">
-            <h3>Daily task</h3>
-            <div class="col-3"></div>
-            <div>
+    <div id="content" class="container-fluid">
+        <div class="d-flex " style="justify-content: space-between">
+            <h1 class="m-3">Task List</h1>
+            <div class="col-3 "></div>
+            <div class="m-3 " style="padding-right: 50px">
                 <img th:src="@{/images/avatar.png}" style="width: 55px;height: 55px;border-radius: 50%" alt="avatar">
                 <span style="padding-left: 20px"><i class="fa fa-bell"
                                                     style="font-size: 20px;color: cornflowerblue"></i></span>
             </div>
         </div>
+        <a class="btn btn-success"
+           style="padding: 3px 10px; font-size: 25px; font-weight: bold; margin-left: 20px"
+           data-bs-toggle="modal"
+           data-bs-target="#staticBackdrop"
+           onclick="resetForm()"
+           title="New Tasks, New Horizons: Paving Your Path to Success!"
+        > + </a>
 
         <div class="container">
             <table class="table table-striped table-hover">
@@ -45,7 +34,7 @@
                     <th>No.</th>
                     <th>Title</th>
                     <th>Start</th>
-                    <th>End</th>
+                    <th>Remain</th>
                     <th>Type</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -56,20 +45,28 @@
                 <tr th:each="task, iter : ${tasks}" th:object="${task}">
                     <td th:text="${iter.index + 1}"></td>
                     <td th:text="${task.title}" th:title="${task.description}" class="task-title"></td>
-                    <td th:text="${task.start}"></td>
-                    <td th:text="${task.end}"></td>
+                    <td th:id="'formatted-start' + ${task.id}" th:text="${task.start}"></td>
+                    <td th:id="'remain-task-' + ${task.id}"></td>
                     <td th:text="${task.type}"></td>
                     <td>
-                        <select class="form-control" id="status" th:field="*{status}"
-                                th:onchange="'updateTaskStatus(' + ${task.id} + ')'">
-                            <option th:each="task : ${taskStatuses}" th:value="${task}" th:text="${task}"></option>
-                        </select>
+                        <button class="btn btn-status" style="width: 135px" th:attr="status-task-id=${task.id}"
+                                th:id="'task-status-'+${task.id}"
+                                th:text="${task.status}"
+                                th:switch="${task.status}"
+                                onclick="cycleStatus(this.getAttribute('status-task-id'))">TODO
+                        </button>
+
                     </td>
                     <td>
-                        <a class="btn btn-primary" th:href="@{/edit/{id}(id=${task.id})}">Edit</a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop"
+                                th:attr="data-task-id=${task.id}"
+                                onclick="onShowPopup(this.getAttribute('data-task-id'))"><i class="fa fa-edit"></i>
+                        </button>
+
+
                         <a class="btn btn-danger"
-                           th:onclick="return confirm('Are you sure you want to delete this task?')"
-                           th:href="@{/delete/{id}(id=${task.id})}">Delete</a>
+                           onclick="return confirm('Are you sure you want to delete this task?')"
+                           th:href="@{/delete/{id}(id=${task.id})}"><i class="fa fa-trash"></i></a>
 
                     </td>
                 </tr>
@@ -77,89 +74,287 @@
             </table>
         </div>
     </div>
-
-
     <!-- Modal -->
     <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
          aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="staticBackdropLabel"
-                        th:text="${task.id!=null ? 'Edit task': 'Create task'}">Create task</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="exampleModalLabel"
+                    >Create task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                            ></button>
                 </div>
                 <div class="modal-body">
-                    <form th:object="${task}" th:action="${task.id != null ? '/edit/' + task.id : '/create'}"
-                          method="post">
-                        <div class="mb-3">
-                            <label for="title" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="title" name="title" th:field="*{title}"
-                                   required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" th:field="*{description}"
-                                      rows="3"></textarea>
-                        </div>
-                        <div class="d-flex" style="justify-content: space-between">
-                            <div class="mb-3 col-5">
-                                <label for="start" class="form-label">Start</label>
-                                <input type="time" class="form-control" id="start" name="start" th:field="*{start}">
+                    <form th:object="${task}" id="form" action=" /create" method="post">
+                        <div id="formBody">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="title" name="title" th:field="*{title}"
+                                       required>
                             </div>
-                            <div class="mb-3 col-5">
-                                <label for="end" class="form-label">End</label>
-                                <input type="time" class="form-control" id="end" name="end" th:field="*{end}">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description"
+                                          th:field="*{description}"
+                                          rows="3"></textarea>
                             </div>
-                        </div>
+                            <div class="d-flex" style="justify-content: space-between">
+                                <div class="mb-3 col-5">
+                                    <label for="start" class="form-label">Start</label>
+                                    <input type="datetime-local" class="form-control" id="start" name="start"
+                                           th:field="*{start}">
+                                </div>
+                                <div class="mb-3 col-5">
+                                    <label for="end" class="form-label">End</label>
+                                    <input type="datetime-local" class="form-control" id="end" name="end"
+                                           th:field="*{end}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="status-create" class="form-label">Status</label>
+                                <select class="form-control" id="status-create" name="status">
+                                    <option th:each="task : ${taskStatuses}" th:value="${task}"
+                                            th:text="${task}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Type</label>
+                                <select name="type" class="form-control" id="type" required>
+                                    <option id="taskType" value="NON_DAILY">NON DAILY</option>
+                                </select>
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="status-create" class="form-label">Status</label>
-                            <select class="form-control" id="status-create" th:field="*{status}">
-                                <option th:each="task : ${taskStatuses}" th:value="${task}" th:text="${task}"></option>
-                            </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="type" class="form-label">Type</label>
-                            <input type="text" class="form-control" id="type" name="type" value="NON_DAILY" required
-                                   disabled>
-                        </div>
-
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary" th:text="${task.id!=null ? 'Save': 'Create'}">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    >Close
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="modal-submit">
                                 Create
                             </button>
                         </div>
-                    </form>
                 </div>
 
+                </form>
             </div>
+
         </div>
     </div>
 </div>
-<!--<h1 class="m-4"></h1>-->
+</div>
 
 
 <th:block th:insert="~{layout.html::myScript}"></th:block>
+
 <script th:inline="javascript">
-    /* Thymeleaf inline JavaScript */
-    function updateTaskStatus(taskId) {
-        var selectedStatus = document.getElementById("status").value;
+    const statuses = [[${taskStatuses}]];
+    let currentStatusIndex = 0;
 
+    window.onload = function () {
+        document.getElementById("homePage").classList.add("active");
+        const buttons = document.querySelectorAll('.btn-status'); // Select all buttons with class 'btn'
 
+        buttons.forEach((button, index) => {
+            const status = button.innerText;
+            changeColor(button, status);
+            if (statuses[currentStatusIndex] === status) {
+                currentStatusIndex = index; // Set the initial currentStatusIndex
+            }
+        });
+    };
+
+    function cycleStatus(taskId) {
+        const statusButton = document.getElementById("task-status-" + taskId);
+        for (let i = 0; i < statuses.length; i++) {
+            if (statuses[i] === statusButton.innerText) {
+                currentStatusIndex = i;
+            }
+        }
+
+        currentStatusIndex = (currentStatusIndex + 1) % statuses.length;
+        const newStatus = statuses[currentStatusIndex];
+        statusButton.innerText = newStatus;
+        changeColor(statusButton, newStatus);
+        updateTaskStatus(taskId, newStatus); // Call your update function here with the new status
+    }
+
+    function changeColor(button, status) {
+        switch (status) {
+            case "TODO":
+                button.style.backgroundColor = "rgb(251 127 207)";
+                break;
+            case "IN_PROGRESS":
+                button.style.backgroundColor = "#b5b5ff";
+                break;
+            case "DONE":
+                button.style.backgroundColor = "#affbaf";
+                break;
+            case "DISMISS":
+                button.style.backgroundColor = "#ffe2ad";
+                break;
+        }
+    }
+
+    function updateTaskStatus(taskId, status) {
         $.ajax({
             type: 'GET',
-            url: '/api/edit/' + taskId + '/' + selectedStatus,
+            url: '/api/edit/' + taskId + '/' + status,
             success: function (response) {
-                console.log('Task status updated successfully');
+                toastr.success("Task status updated successfully");
             },
             error: function () {
-                console.error('Error updating task status');
+                toastr.error("Error updating task status");
             }
         });
     }
 </script>
+<script th:inline="javascript">
+    const tasks = [[${tasks}]];
+    const types = [[${taskTypes}]];
+
+    function formatTime(time) {
+        return time < 10 ? '0' + time : time;
+    }
+
+    function updateCountdowns() {
+        const now = new Date();
+
+        tasks.forEach(task => {
+            const endDate = new Date(task.end);
+            const timeRemaining = endDate - now;
+
+            const countdownElement = document.getElementById('remain-task-' + task.id);
+
+            if (countdownElement) {
+                if (timeRemaining <= 0) {
+                    countdownElement.textContent = 'Time has passed for this task!';
+                } else {
+                    const hours = Math.floor(timeRemaining / 3600000);
+                    const minutes = Math.floor((timeRemaining % 3600000) / 60000);
+                    countdownElement.textContent = `${formatTime(hours)}h ${formatTime(minutes)}m `;
+                }
+            }
+
+        });
+    }
+
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+
+    function formatStartTime() {
+        tasks.forEach(task => {
+            const startElement = document.getElementById('formatted-start' + task.id);
+            if (startElement) {
+                startElement.textContent = formatDateTime(startElement.textContent);
+            }
+        });
+    }
+
+    function formatDateTime(dateTimeString) {
+        const options = {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'};
+        return new Date(dateTimeString).toLocaleString('en-US', options).replace(',', '');
+    }
+
+    formatStartTime();
+
+    function DOM(ele) {
+        return document.getElementById(ele);
+    }
+
+    function dateTimeToTime(dateTimeString) {
+        const dateTime = new Date(dateTimeString);
+        const hours = dateTime.getHours().toString().padStart(2, '0');
+        const minutes = dateTime.getMinutes().toString().padStart(2, '0');
+
+        return `${hours}:${minutes}`;
+    }
+
+    const title = DOM("exampleModalLabel");
+    const form = DOM("form");
+    const taskTitle = DOM("title");
+    const description = DOM("description");
+    const start = DOM("start");
+    const end = DOM("end");
+    const taskStatus = DOM("status-create");
+    const type = DOM("taskType");
+    const btnSubmit = DOM("modal-submit")
+    const typeHTML = "";
+
+    let index = 0;
+    let foundTask = null;
+
+    function resetForm() {
+        title.innerText = "Create Task";
+        form.action = "/create"
+        taskTitle.value = "";
+        description.value = "";
+        start.type = "dateTime-local";
+        end.type = "dateTime-local";
+        start.value = Date.now();
+        end.value = Date.now();
+        type.value = "NON_DAILY";
+        type.innerText = "NON DAILY";
+        btnSubmit.innerText = "Create";
+
+    }
+    function onShowPopup(id) {
+        tasks.forEach(task => {
+            if (task.id === id) {
+                foundTask = task;
+            }
+        });
+        if (foundTask == null) {
+            toastr.error("Task not found!");
+
+
+        } else {
+            title.innerText = "Edit task";
+            form.action = "/edit/" + foundTask.id;
+            taskTitle.value = foundTask.title;
+            description.value = foundTask.description;
+            btnSubmit.innerText = "Save"
+            let statusHTML = "";
+            for (let i = 0; i < statuses.length; i++) {
+                if (statuses[i] === DOM("task-status-" + foundTask.id).innerText) {
+                    index = i;
+                }
+            }
+            for (let i = 0; i < statuses.length; i++) {
+                if (i === index) {
+                    statusHTML += `<option value="${statuses[i]}" selected
+                           >${statuses[i]}</option>`
+                } else {
+                    statusHTML += `<option value="${statuses[i]}"
+                           >${statuses[i]}</option>`
+                }
+            }
+            if (foundTask.type === "DAILY") {
+                start.type = "time";
+                end.type = "time";
+                start.value = dateTimeToTime(foundTask.start);
+                end.value = dateTimeToTime(foundTask.end);
+                type.value = "DAILY"
+                type.innerText = "DAILY"
+            } else {
+                start.type = "dateTime-local";
+                end.type = "dateTime-local";
+                start.value = foundTask.start;
+                end.value = foundTask.end;
+                type.value = "NON_DAILY"
+                type.innerText = "NON DAILY"
+            }
+            taskStatus.innerHTML = statusHTML;
+
+
+        }
+
+
+    }
+
+</script>
+
+
 </body>
 </html>
 

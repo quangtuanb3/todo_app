@@ -1,22 +1,23 @@
 package com.example.task_app.controllers;
 
 import com.example.task_app.model.Task;
+import com.example.task_app.model.TaskHistory;
 import com.example.task_app.model.enumeration.TaskStatus;
 import com.example.task_app.model.enumeration.TaskType;
-import com.example.task_app.services.TaskService;
+import com.example.task_app.services.taskHistory.TaskHistoryService;
+import com.example.task_app.services.taskHistory.request.TaskHistorySaveRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @Controller
 @RequestMapping("/")
 public class HomeController {
-    private final TaskService taskService;
+    private final TaskHistoryService taskHistoryService;
 
     @GetMapping
     public ModelAndView showListTasks() {
@@ -25,20 +26,20 @@ public class HomeController {
         view.addObject("task", new Task());
         view.addObject("message", "");
         view.addObject("taskTypes", TaskType.values());
-        view.addObject("tasks", taskService.getAll());
+        view.addObject("tasks", taskHistoryService.getTaskInDay());
         return view;
     }
 
     @PostMapping("/create")
-    public ModelAndView showCreate(@ModelAttribute Task task) {
-        ModelAndView view = new ModelAndView("redirect:/");
-        TaskService.getInstance().saveNonDailyTask(task);
-//        view.addObject("taskStatuses", TaskStatus.values());
-//        view.addObject("task", new Task());
-//        view.addObject("taskTypes", TaskType.values());
-//        view.addObject("tasks", taskService.getAll());
-        view.addObject("message", "Created successfully");
-        return view;
+    public ModelAndView showCreate(@ModelAttribute TaskHistorySaveRequest taskHistory) {
+        taskHistoryService.saveNonDailyTask(taskHistory);
+        return new ModelAndView("redirect:/?message=Created successfully");
+    }
+    @GetMapping("/delete/{id}")
+    public ModelAndView delete(@PathVariable Long id){
+        taskHistoryService.findById(id);
+        taskHistoryService.deleteById(id);
+        return new ModelAndView("redirect:/tasks?message=Deleted successfully");
     }
 
 

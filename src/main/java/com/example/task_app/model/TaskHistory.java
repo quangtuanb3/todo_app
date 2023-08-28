@@ -11,32 +11,40 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
-import java.sql.Date;
-import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "tasks")
+@Table(name = "task_histories")
 @Where(clause = "deleted = 0")
-@SQLDelete(sql = "UPDATE tasks SET `deleted` = 1 WHERE (`id` = ?);")
-public class Task {
+@SQLDelete(sql = "UPDATE task_histories SET `deleted` = 1 WHERE (`id` = ?);")
+public class TaskHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
     private String description;
-    private LocalTime start;
-    private LocalTime end;
+    private LocalDateTime start;
+    private LocalDateTime end;
+    private LocalDate created;
     private boolean deleted = false;
-    private LocalDate renewalDate = LocalDate.now().plusDays(1);
+    @Enumerated(value = EnumType.STRING)
+    private TaskStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Enumerated(value = EnumType.STRING)
+    private TaskType type;
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Task task;
+
+    @PrePersist
+    public void setupBeforeInsert() {
+        created = LocalDate.now();
+    }
 }

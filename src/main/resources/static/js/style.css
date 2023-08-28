@@ -1,0 +1,29 @@
+#sidebar{
+    background-color: #29296e;
+}
+.navbar-tab{
+    width: 100%;
+    background-color: transparent;
+    padding: 15px 20px;
+    border-top: 1px solid whitesmoke;
+}
+.nav-bar-link{
+    color: white;
+    font-size: 20px;
+    text-decoration: none;
+    padding: 15px 20px;
+}
+#sidebar .active{
+    background-color: #081a42;
+}
+.navbar-tab:hover{
+    background-color: #081a42;
+    color: white;
+}
+.nav-bar-link:hover{
+    color: #c9b788;
+}
+
+tr th,td {
+    text-align: center;
+}
