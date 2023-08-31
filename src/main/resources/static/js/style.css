@@ -1,3 +1,6 @@
+*{
+    font-size: 14px;
+}
 #sidebar{
     background-color: #29296e;
 }
@@ -26,4 +29,13 @@
 
 tr th,td {
     text-align: center;
+}
+#dailyChart {
+    width: 100%!important;
+    height: 250px!important;
+}
+
+#weeklyChart {
+    width: 100%!important;
+    height: 250px!important;
 }

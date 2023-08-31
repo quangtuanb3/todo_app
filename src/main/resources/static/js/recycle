@@ -1,0 +1,111 @@
+<script th:inline="javascript">
+
+    document.getElementById('endDate').addEventListener('change', function () {
+        updateChartsBasedOnDateInput();
+    });
+
+    function isValidDate(dateString) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(dateString)) {
+            return false;
+        }
+        const date = new Date(dateString);
+        return date.toString() !== 'Invalid Date';
+    }
+
+    function updateChartsBasedOnDateInput() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!isValidDate(endDate)) {
+            toastr.info('Please enter end date');
+            toastr.options={
+                timeOut: 500
+            }
+            return;
+        }
+
+        // Additional logic for updating charts based on the date range
+        updateDaysChart(startDate, endDate);
+    }
+    let daysChart = document.getElementById('dailyChart').getContext('2d');
+    let weeklyChart = document.getElementById('weeklyChart').getContext('2d');
+    const statuses = [[${taskStatuses}]];
+    let tasks = [[${dayTasks}]];
+    let weeklyTasks = [[${weeklyTasks}]];
+    const types = [[${taskTypes}]];
+
+    function getPercentage(status, tasks) {
+        const count = tasks.filter(task => task.status === status).length;
+        return ((count / tasks.length) * 100).toFixed(2);
+    }
+
+    const updateChart = (chart, data) => {
+        chart.data.datasets[0].data = data;
+        chart.update();
+    };
+
+    const initChart = (chartElement, data, taskCounts) => {
+        return new Chart(chartElement, {
+            type: 'bar',
+            data: {
+                labels: statuses,
+                datasets: [{
+                    label: 'Percentage',
+                    data: data,
+                    backgroundColor: ["rgb(251 127 207)", "#b5b5ff", '#affbaf', "#ffe2ad"],
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const dataIndex = context.dataIndex;
+                                const percentage = data[dataIndex];
+                                const count = taskCounts[dataIndex];
+                                return `${percentage}% (${count} tasks)`;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    };
+    let taskDayCounts = statuses.map(status => tasks.filter(task => task.status === status).length);
+    let chartDaily = initChart(daysChart, statuses.map(status => getPercentage(status, tasks)), taskDayCounts);
+
+
+    let taskWeekCounts = statuses.map(status => weeklyTasks.filter(task => task.status === status).length);
+    let chartWeek = initChart(daysChart, statuses.map(status => getPercentage(status, weeklyTasks)), taskWeekCounts);
+
+    const updateDaysChart = (firstDate, lastDate) => {
+        $.ajax({
+            type: 'GET',
+            url: '/api/discharged/' + firstDate + '/' + lastDate,
+            dataType: 'json', // Specify that you expect JSON data
+            success: function (response) {
+                // Check if the response contains the expected data
+                if (response && response.dayTasks) {
+                    const newTasks = response.dayTasks; // Assuming the response contains updated task data
+                    const newDataDaily = statuses.map(status => getPercentage(status, newTasks));
+                    updateChart(chartDaily, newDataDaily);
+                } else {
+                    console.log('Invalid API response format');
+                }
+            },
+            error: function (error) {
+                console.error('Error:', error);
+            }
+        });
+    };
+
+</script>

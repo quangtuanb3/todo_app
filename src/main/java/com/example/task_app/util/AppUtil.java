@@ -6,14 +6,11 @@ import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
 
 public class AppUtil {
     public static final ModelMapper mapper;
@@ -51,7 +48,6 @@ public class AppUtil {
 
         };
 
-
         Converter<LocalDateTime, LocalTime> toTimeDateTime = new AbstractConverter<>() {
             @Override
             protected LocalTime convert(LocalDateTime source) {
@@ -65,7 +61,39 @@ public class AppUtil {
         mapper.addConverter(toStringTime);
         mapper.addConverter(timeToDateTime);
     }
+    public static LocalDate[] getWeekBoundaries(LocalDate date) {
+        LocalDate[] boundaries = new LocalDate[2];
+        LocalDate firstDayOfWeek = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+        LocalDate lastDayOfWeek = date.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        boundaries[0] = firstDayOfWeek;
+        boundaries[1] = lastDayOfWeek;
+        return boundaries;
+    }
+    public static int getCurrentWeekNumber() {
+        LocalDate currentDate = LocalDate.now();
 
+        Locale locale = Locale.getDefault();
+        WeekFields weekFields = WeekFields.of(locale);
+
+        return currentDate.get(weekFields.weekOfWeekBasedYear());
+    }
+    public static LocalDate[] getStartAndEndDatesFromWeek(String weekYear) {
+        LocalDate[] result = new LocalDate[2];
+        int year = Integer.parseInt(weekYear.substring(0, 4));
+        int week = Integer.parseInt(weekYear.substring(6));
+
+        LocalDate startOfWeek = LocalDate.of(year, 1, 1)
+                .with(TemporalAdjusters.firstDayOfYear())
+                .plusWeeks(week)
+                .with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
+
+        result[0] = startOfWeek;
+        result[1] = endOfWeek;
+
+        return result;
+    }
 
 }
 

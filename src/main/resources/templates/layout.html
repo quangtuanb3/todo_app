@@ -42,10 +42,13 @@
         <h2 style="color: white" class="p-4">Task Menu</h2>
         <ul class="list-unstyled components">
             <li class="navbar-tab" id="homePage">
-                <a href="/" class="nav-bar-link" >Home</a>
+                <a href="/" class="nav-bar-link" > <i class="fa fa-home"></i> <span style="padding-left: 15px">Home</span></a>
             </li>
             <li class="navbar-tab" id="taskPage">
-                <a href="/tasks" class="nav-bar-link" >Edit Daily task</a>
+                <a href="/tasks" class="nav-bar-link" > <i class="fa fa-book"></i><span style="padding-left: 15px">Setup Your Day</span> </a>
+            </li>
+            <li class="navbar-tab" id="statisticalPage">
+                <a href="/statistical" class="nav-bar-link" > <i class="fa fa-chart-bar"></i><span style="padding-left: 15px">Statistical</span> </a>
             </li>
 
         </ul>
@@ -53,6 +56,7 @@
 </div>
 
 <div th:fragment="myScript">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/base.js"></script>
     <div class="toast-body d-none" id="message_toastr" th:text="${message}"></div>
 
@@ -72,7 +76,7 @@
             } else if (messageContent.includes("successfully")) {
                 toastr.options = {
                     positionClass: 'toast-top-right',
-                    timeOut: 2000
+                    timeOut: 1000
                 };
                 toastr.success(messageContent);
             }

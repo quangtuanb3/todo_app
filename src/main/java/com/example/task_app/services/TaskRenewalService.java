@@ -20,30 +20,13 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-
 public class TaskRenewalService {
 
     private final TaskRepository taskRepository;
 
     private final TaskHistoryRepository taskHistoryRepository;
 
-    @Transactional
-    @Scheduled(cron = "0 0 0 * * *")
-    public void renewTasks() {
-        System.out.println("Renewal task started.");
-        LocalDate lastDate = getLastCreatedDate();
 
-        if (LocalDate.now().isAfter(lastDate)) {
-            List<Task> tasksToRenew = taskRepository.findByRenewalDate(lastDate.plusDays(1)); // Adjust method name
-            List<TaskHistory> renewedTasks = tasksToRenew.stream()
-                    .map(this::createTaskHistoryFromTask)
-                    .map(taskHistoryRepository::save)
-                    .toList();
-            updateRenewalDate(tasksToRenew, lastDate);
-            taskHistoryRepository.saveAll(renewedTasks);
-
-        }
-    }
 
     public void updateRenewalDate(List<Task> tasks, LocalDate date) {
         taskRepository.saveAll(tasks.stream()
@@ -53,20 +36,16 @@ public class TaskRenewalService {
     }
 
 
-    @Transactional
-    @EventListener(ContextRefreshedEvent.class)
-    public void contextRefreshedEvent() {
-        renewTasks();
-    }
 
-    private LocalDate getLastCreatedDate() {
-
+   public LocalDate getLastCreatedDate() {
         List<LocalDate> results = taskHistoryRepository.findCreatedTask(PageRequest.of(0, 1));
+        List<LocalDate> tasksDate = taskRepository.findByRenewalDate(PageRequest.of(0, 1));
         if (!results.isEmpty()) {
             return results.get(0);
+        } else if (!tasksDate.isEmpty()) {
+            return tasksDate.get(0);
         }
-        return LocalDate.now().plusDays(-1);
-
+        return LocalDate.now();
     }
 
 
@@ -81,10 +60,8 @@ public class TaskRenewalService {
         }
     }
 
-
-    private TaskHistory createTaskHistoryFromTask(Task task) {
+    public TaskHistory createTaskHistoryFromTask(Task task) {
         LocalDate currentDate = LocalDate.now();
-
         return TaskHistory.builder()
                 .title(task.getTitle())
                 .description(task.getDescription())

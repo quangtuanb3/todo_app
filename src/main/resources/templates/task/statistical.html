@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout.html :: header}">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<div class="d-flex">
+    <!-- Sidebar -->
+    <th:block th:insert="~{layout.html::mySidebar}"></th:block>
+    <!-- Page Content -->
+    <div id="content" class="container-fluid">
+        <div class="d-flex " style="justify-content: space-between">
+            <h1 class="m-3">Task Statistical</h1>
+            <div class="col-3 "></div>
+            <div class="m-3 " style="padding-right: 50px">
+                <img th:src="@{/images/avatar.png}" style="width: 55px;height: 55px;border-radius: 50%" alt="avatar">
+                <span style="padding-left: 20px"><i class="fa fa-bell"
+                                                    style="font-size: 20px;color: cornflowerblue"></i></span>
+            </div>
+        </div>
+        <div class="container row">
+            <div id="dailyTask" class="col-6">
+                <div class="d-flex">
+                    <h4>Date</h4>
+                    <label for="startDate" style="padding-left: 30px"></label><input type="date" id="startDate" value="">
+                    <label for="endDate" style="padding-left: 30px"></label><input type="date" id="endDate" value="">
+                </div>
+
+                <div class="container mt-5">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+            <div id="weeklyTask" class="col-6">
+                <div class="d-flex">
+                    <h4>Week</h4>
+                    <label style="padding-left: 20px">
+                        <input type="week" placeholder="Select date" id="week">
+                    </label>
+                </div>
+                <div class="container mt-5">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+
+
+<th:block th:insert="~{layout.html::myScript}"></th:block>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Add the "active" class to the element with the ID "statisticalPage"
+        document.getElementById("statisticalPage").classList.add("active");
+
+        // Set the values of the "start" and "end" elements to the current date
+        document.getElementById('startDate').value = getDateNow();
+        document.getElementById('endDate').value = getDateNow();
+        document.getElementById("week").value = getCurrentWeek();
+    });
+    function getDateNow() {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    function getCurrentWeek() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const weekNumber = getISOWeek(today);
+        return `${year}-W${String(weekNumber).padStart(2, '0')}`;
+    }
+
+    function getISOWeek(date) {
+        const target = new Date(date.valueOf());
+        const dayNr = (date.getDay() + 6) % 7;
+        target.setDate(target.getDate() - dayNr + 3);
+        const firstThursday = target.valueOf();
+        target.setMonth(0, 1);
+        if (target.getDay() !== 4) {
+            target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+        }
+        return 1 + Math.ceil((firstThursday - target) / 604800000);
+    }
+
+</script>
+<script th:inline="javascript">
+    document.getElementById('endDate').addEventListener('change', function () {
+        updateChartsBasedOnDateInput();
+    });
+    document.getElementById('week').addEventListener('change', function () {
+        updateWeekChart(document.getElementById('week').value);
+    });
+
+    function isValidDate(dateString) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(dateString)) {
+            return false;
+        }
+        const date = new Date(dateString);
+        return date.toString() !== 'Invalid Date';
+    }
+
+    function updateChartsBasedOnDateInput() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!isValidDate(endDate)) {
+            toastr.options = {
+                timeOut: 500
+            };
+            toastr.info('Please enter end date');
+            return;
+        }
+
+        updateDaysChart(startDate, endDate);
+    }
+
+    let daysChart = document.getElementById('dailyChart').getContext('2d');
+    let weeklyChart = document.getElementById('weeklyChart').getContext('2d');
+    const statuses = [[${taskStatuses}]];
+    const tasks = [[${dayTasks}]];
+    const weeklyTasks = [[${weeklyTasks}]];
+    const types = [[${taskTypes}]];
+
+    function getPercentage(status, tasks) {
+        const count = tasks.filter(task => task.status === status).length;
+        const totalCount = tasks.length;
+
+        if (totalCount === 0) {
+            return "0.00";  // To handle the case of no tasks
+        }
+
+        return ((count / totalCount) * 100).toFixed(2);
+    }
+
+    const updateChart = (chart, data, taskCounts) => {
+        chart.data.datasets[0].data = data;
+        chart.data.datasets.data = data
+        updateTooltipCallbacks(chart, data, taskCounts);
+        chart.update();
+    };
+    const updateTooltipCallbacks = (chart, newData, taskCounts) => {
+        chart.options.plugins.tooltip.callbacks.label = (context) => {
+            const dataIndex = context.dataIndex;
+            const percentage = newData[dataIndex]; // Use the updated data
+            const count = taskCounts[dataIndex];
+            return `${percentage}% (${count} tasks)`;
+        };
+    };
+
+
+
+    const initChart = (chartElement, data, taskCounts) => {
+        return new Chart(chartElement, {
+            type: 'bar',
+            data: {
+                labels: statuses,
+                datasets: [{
+                    label: 'Percentage',
+                    data: data,
+                    backgroundColor: ["rgb(251 127 207)", "#b5b5ff", '#affbaf', "#ffe2ad"],
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const dataIndex = context.dataIndex;
+                                const percentage = data[dataIndex];
+                                const count = taskCounts[dataIndex];
+                                return `${percentage}% (${count} tasks)`;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    };
+
+    let taskDayCounts = statuses.map(status => tasks.filter(task => task.status === status).length);
+    let chartDaily = initChart(daysChart, statuses.map(status => getPercentage(status, tasks)), taskDayCounts);
+
+    let taskWeekCounts = statuses.map(status => weeklyTasks.filter(task => task.status === status).length);
+    let chartWeek = initChart(weeklyChart, statuses.map(status => getPercentage(status, weeklyTasks)), taskWeekCounts);
+
+
+    const updateWeekChart = (yearweek) => {
+        $.ajax({
+            type: 'GET',
+            url: `/api/weeklyChart/${yearweek}`,
+            dataType: 'json',
+            success: function (response) {
+                if (response && response.weeklyTasks) {
+                    const newWeeklyTasks = response.weeklyTasks;
+                    const newDataWeekly = statuses.map(status => getPercentage(status, newWeeklyTasks));
+                    taskWeekCounts = statuses.map(status => weeklyTasks.filter(task => task.status === status).length);
+                    updateChart(chartWeek, newDataWeekly, taskWeekCounts);
+                } else {
+                    console.log('Invalid API response format');
+                }
+            },
+            error: function (error) {
+                console.error('Error:', error);
+            }
+        });
+    };
+
+    // Function to update the daily and weekly charts
+    const updateDaysChart = (firstDate, lastDate) => {
+        $.ajax({
+            type: 'GET',
+            url: '/api/discharged/' + firstDate + '/' + lastDate,
+            dataType: 'json',
+            success: function (response) {
+                if (response && response.dayTasks) {
+                    const newTasks = response.dayTasks;
+                    const newDataDaily = statuses.map(status => getPercentage(status, newTasks));
+                    taskDayCounts = statuses.map(status => tasks.filter(task => task.status === status).length);
+                    updateChart(chartDaily, newDataDaily, taskDayCounts);
+                } else {
+                    console.log('Invalid API response format');
+                }
+            },
+            error: function (error) {
+                console.error('Error:', error);
+            }
+        });
+    };
+</script>
+
+</body>
+
+</html>
+

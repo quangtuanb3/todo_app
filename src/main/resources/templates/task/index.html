@@ -134,9 +134,10 @@
                                 Create
                             </button>
                         </div>
+                    </form>
                 </div>
 
-                </form>
+
             </div>
 
         </div>
@@ -202,9 +203,11 @@
             url: '/api/edit/' + taskId + '/' + status,
             success: function (response) {
                 toastr.success("Task status updated successfully");
+                toastr.options = { timeOut: 300}
             },
             error: function () {
                 toastr.error("Error updating task status");
+                toastr.options = { timeOut: 1500}
             }
         });
     }
@@ -283,6 +286,15 @@
 
     let index = 0;
     let foundTask = null;
+    function getDateTimeNow() {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
 
     function resetForm() {
         title.innerText = "Create Task";
@@ -291,8 +303,8 @@
         description.value = "";
         start.type = "dateTime-local";
         end.type = "dateTime-local";
-        start.value = Date.now();
-        end.value = Date.now();
+        start.value = getDateTimeNow();
+        end.value = getDateTimeNow();
         type.value = "NON_DAILY";
         type.innerText = "NON DAILY";
         btnSubmit.innerText = "Create";
